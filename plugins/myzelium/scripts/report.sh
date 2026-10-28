@@ -60,6 +60,20 @@ if git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     [ -z "$files" ] && files="-"
   fi
 fi
+# An explicit binding wins, as in the Myzelium MCP: the nearest
+# .context-hub/project.json at or above the session folder. This is what binds
+# a session started in a parent folder that is not itself a git repo.
+project_id=""
+dir="$cwd"
+while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+  if [ -f "$dir/.context-hub/project.json" ]; then
+    project_id=$(tr '\n' ' ' < "$dir/.context-hub/project.json" \
+      | sed -n 's/.*"projectId"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F-]\{36\}\)".*/\1/p')
+    break
+  fi
+  dir=$(dirname "$dir")
+done
+
 # Strip credentials from an https remote before it leaves the machine.
 remote=$(printf '%s' "$remote" | sed -E 's#://[^/@]+@#://#')
 
@@ -72,5 +86,6 @@ args=(-sS -o /dev/null -m "$timeout" -X POST "$url/local-sessions/events"
 [ -n "$branch" ] && args+=(-H "x-myz-branch: $branch")
 [ -n "$head" ] && args+=(-H "x-myz-head: $head")
 [ -n "$files" ] && args+=(-H "x-myz-files: $files")
+[ -n "$project_id" ] && args+=(-H "x-myz-project-id: $project_id")
 printf '%s' "$input" | curl "${args[@]}" --data-binary @- >/dev/null 2>&1
 exit 0

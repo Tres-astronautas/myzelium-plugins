@@ -36,7 +36,14 @@ permission prompt) to `POST /local-sessions/events` (API code: `apps/context-hub
 
 - Claude Code's hook input for that event
 - the repo's `origin` remote (with any credentials stripped), branch and HEAD
+- the `projectId` from the nearest `.context-hub/project.json` at or above the
+  session's folder, if there is one — the same file the Myzelium MCP binds by.
+  It wins over the git remote, and is what links a session started in a folder
+  that is not itself a git repo (only if your key can read that project)
 - at the end of a turn: the files the branch changes plus uncommitted ones (up to 80 paths)
+
+A turn that ends on a question is recorded as waiting on that question, so it
+shows up in your home inbox as a decision, not just "finished".
 
 Server-side, the prompt is cut to 280 characters and the reply to 600, and
 pasted blocks are dropped. Prompt, reply and title are **only stored when the
