@@ -1,0 +1,22 @@
+{
+  "name": "myzelium",
+  "displayName": "Myzelium",
+  "version": "0.1.0",
+  "description": "Shows your Claude Code sessions in Myzelium: what each one is working on, and which ones are waiting for you. Read-only: Myzelium never sends anything into your session.",
+  "author": { "name": "Tres Astronautas" },
+  "homepage": "https://myzelium.ai",
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "Myzelium MCP key",
+      "description": "The chmcp_… key from Myzelium → Settings → MCP keys (the same one your Myzelium MCP connection uses)",
+      "sensitive": true
+    },
+    "api_url": {
+      "type": "string",
+      "title": "Myzelium API URL",
+      "description": "Leave as is unless you run your own Myzelium",
+      "default": "https://api.myzelium.ai"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "myzelium",
+  "description": "Myzelium plugins for Claude Code",
+  "owner": { "name": "Tres Astronautas", "email": "soto@tresastronautas.com" },
+  "plugins": [
+    {
+      "name": "myzelium",
+      "source": "./plugins/myzelium",
+      "description": "Shows your Claude Code sessions in Myzelium: what each one is working on, and which ones are waiting for you"
+    }
+  ]
+}
