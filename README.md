@@ -6,8 +6,10 @@ what each one is working on, which branch and files it touches, and which ones
 are waiting for you. It shows up on the project's Build workspace, next to the
 active-work board.
 
-**Read-only.** The plugin only reports. Myzelium never sends anything into your
-session.
+**Read-only unless you turn answers on.** By default the plugin only reports.
+Start a session with the Myzelium channel on and you can also **answer it from
+Myzelium** — the inbox on your phone or the web — and the answer arrives in the
+session as if you had typed it there (see [Answering from Myzelium](#answering-from-myzelium)).
 
 ## Install
 
@@ -26,7 +28,7 @@ Myzelium → Settings → MCP keys). It is stored in your OS credential store, n
 in `settings.json`. To try it without installing:
 `MYZELIUM_API_KEY=chmcp_… claude --plugin-dir plugins/myzelium`.
 
-Needs `bash`, `git` and `curl`.
+Needs `bash`, `git` and `curl` to report; answering also needs `node` 18+.
 
 ## What is sent
 
@@ -52,6 +54,34 @@ the session's state is kept, for your own "needs you" list.
 
 All hooks run in the background, never block the session, and exit 0 on any
 error. Kill switch: `MYZELIUM_SESSIONS_DISABLE=1`.
+
+## Answering from Myzelium
+
+Start Claude Code with the channel on:
+
+```
+claude --dangerously-load-development-channels plugin:myzelium@myzelium
+```
+
+(`--channels plugin:myzelium@myzelium` once your org adds it to
+`allowedChannelPlugins`; Team/Enterprise orgs must also have `channelsEnabled`
+on — Organization settings → Claude Code → Channels.)
+
+Then a session that asks you something, or finishes its turn, shows an answer
+box in Myzelium's inbox. What you type is delivered by `scripts/channel.mjs`, a
+small MCP server Claude Code runs inside the session:
+
+- **Only you** can answer your session — the answer is taken from your signed-in
+  Myzelium account, and fetched with your MCP key.
+- **Only between turns.** An answer waits while the session is working.
+- **The terminal wins.** If you type in the terminal first, the queued answer
+  is cancelled, never delivered late.
+- **Not permission prompts.** A session stopped on a permission prompt still
+  needs the terminal (or Remote Control).
+- Without the flag the channel server does nothing — it does not even poll.
+
+Sessions spawned by `claude remote-control` (the device server) cannot be
+started with channels, so they stay read-only; answer them in the Claude app.
 
 ## States
 

@@ -1,15 +1,17 @@
 {
   "name": "myzelium",
   "displayName": "Myzelium",
-  "version": "0.2.0",
-  "description": "Shows your Claude Code sessions in Myzelium: what each one is working on, and which ones are waiting for you. Read-only: Myzelium never sends anything into your session.",
-  "author": { "name": "Tres Astronautas" },
+  "version": "0.3.0",
+  "description": "Shows your Claude Code sessions in Myzelium: what each one is working on, and which ones are waiting for you. Answer them from Myzelium's inbox when you start Claude Code with the Myzelium channel on; otherwise it only reports.",
+  "author": {
+    "name": "Tres Astronautas"
+  },
   "homepage": "https://myzelium.ai",
   "userConfig": {
     "api_key": {
       "type": "string",
       "title": "Myzelium MCP key",
-      "description": "The chmcp_… key from Myzelium → Settings → MCP keys (the same one your Myzelium MCP connection uses)",
+      "description": "The chmcp_\u2026 key from Myzelium \u2192 Settings \u2192 MCP keys (the same one your Myzelium MCP connection uses)",
       "sensitive": true
     },
     "api_url": {
@@ -18,5 +20,23 @@
       "description": "Leave as is unless you run your own Myzelium",
       "default": "https://api.myzelium.ai"
     }
-  }
+  },
+  "mcpServers": {
+    "answers": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/channel.mjs"
+      ],
+      "env": {
+        "MYZELIUM_API_KEY": "${user_config.api_key}",
+        "MYZELIUM_API_URL": "${user_config.api_url}"
+      }
+    }
+  },
+  "channels": [
+    {
+      "server": "answers",
+      "displayName": "Myzelium answers"
+    }
+  ]
 }
