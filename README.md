@@ -76,8 +76,11 @@ small MCP server Claude Code runs inside the session:
 - **Only between turns.** An answer waits while the session is working.
 - **The terminal wins.** If you type in the terminal first, the queued answer
   is cancelled, never delivered late.
-- **Not permission prompts.** A session stopped on a permission prompt still
-  needs the terminal (or Remote Control).
+- **Permission prompts: one call at a time.** When the session stops on a
+  permission prompt, the card shows the tool and its arguments with **Allow
+  once** and **Deny**. The verdict applies to that call only; the terminal
+  dialog stays open, and whichever answer comes first wins. The arguments are
+  stored only while the prompt is open, and wiped when it closes.
 - Without the flag the channel server does nothing — it does not even poll.
 
 Sessions spawned by `claude remote-control` (the device server) cannot be

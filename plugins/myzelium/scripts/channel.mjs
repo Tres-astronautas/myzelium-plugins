@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Myzelium channel. Delivers the answers you type in Myzelium's inbox (web or
 // phone) into this Claude Code session, between turns, as if you had typed
-// them here.
+// them here — and relays permission prompts, so you can allow or deny one
+// tool call from Myzelium while the terminal dialog stays open too.
 //
 // An MCP server over stdio, with no dependencies (Node 18+). It does nothing
 // unless the session was started with the channel on:
@@ -94,7 +95,17 @@ async function poll() {
         return;
       }
       if (res.ok) {
-        const { messages = [] } = await res.json();
+        const { messages = [], verdicts = [] } = await res.json();
+        // A verdict applies only to a prompt Claude Code issued with that id;
+        // it never reaches the model as text.
+        for (const v of verdicts) {
+          if (!/^[a-km-z]{5}$/.test(v.request_id) || (v.behavior !== 'allow' && v.behavior !== 'deny')) continue;
+          write({
+            jsonrpc: '2.0',
+            method: 'notifications/claude/channel/permission',
+            params: { request_id: v.request_id, behavior: v.behavior },
+          });
+        }
         for (const m of messages) {
           write({
             jsonrpc: '2.0',
@@ -110,6 +121,28 @@ async function poll() {
   setTimeout(poll, POLL_MS);
 }
 
+/** A permission prompt opened: tell Myzelium, so its owner can decide it there. */
+async function relayPermission(params) {
+  const sid = sessionId();
+  if (!polling || stopped || !sid) return;
+  try {
+    await fetch(`${API}/local-sessions/channel/permission`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session: sid,
+        request_id: String(params.request_id ?? ''),
+        tool_name: String(params.tool_name ?? ''),
+        description: String(params.description ?? ''),
+        input_preview: String(params.input_preview ?? ''),
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    /* the terminal dialog is still open: nothing is lost */
+  }
+}
+
 function startPolling() {
   if (polling || !KEY || process.env.MYZELIUM_SESSIONS_DISABLE || !channelOn(parentArgs())) return;
   polling = true;
@@ -123,8 +156,10 @@ function handle(msg) {
       id: msg.id,
       result: {
         protocolVersion: msg.params?.protocolVersion ?? '2025-06-18',
-        capabilities: { experimental: { 'claude/channel': {} } },
-        serverInfo: { name: 'myzelium', version: '0.3.0' },
+        // The relay is safe to declare: a verdict only ever comes from the
+        // session's owner, signed in to Myzelium (the API checks it).
+        capabilities: { experimental: { 'claude/channel': {}, 'claude/channel/permission': {} } },
+        serverInfo: { name: 'myzelium', version: '0.4.0' },
         instructions: INSTRUCTIONS,
       },
     });
@@ -132,6 +167,10 @@ function handle(msg) {
   }
   if (msg.method === 'notifications/initialized') {
     startPolling();
+    return;
+  }
+  if (msg.method === 'notifications/claude/channel/permission_request') {
+    void relayPermission(msg.params ?? {});
     return;
   }
   if (msg.id === undefined) return; // other notifications: nothing to do
