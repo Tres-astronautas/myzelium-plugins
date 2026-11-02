@@ -159,7 +159,7 @@ function handle(msg) {
         // The relay is safe to declare: a verdict only ever comes from the
         // session's owner, signed in to Myzelium (the API checks it).
         capabilities: { experimental: { 'claude/channel': {}, 'claude/channel/permission': {} } },
-        serverInfo: { name: 'myzelium', version: '0.4.0' },
+        serverInfo: { name: 'myzelium', version: '0.5.0' },
         instructions: INSTRUCTIONS,
       },
     });

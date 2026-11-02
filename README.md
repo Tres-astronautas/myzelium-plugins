@@ -43,6 +43,8 @@ permission prompt) to `POST /local-sessions/events` (API code: `apps/context-hub
   It wins over the git remote, and is what links a session started in a folder
   that is not itself a git repo (only if your key can read that project)
 - at the end of a turn: the files the branch changes plus uncommitted ones (up to 80 paths)
+- whether the session runs under Remote Control (spawned by `claude remote-control`)
+  or in a terminal, so its card can say where to answer it
 
 A turn that ends on a question is recorded as waiting on that question, so it
 shows up in your home inbox as a decision, not just "finished".

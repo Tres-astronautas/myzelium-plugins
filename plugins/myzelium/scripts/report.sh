@@ -105,5 +105,13 @@ args=(-sS -o /dev/null -m "$timeout" -X POST "$url/local-sessions/events"
 [ -n "$head" ] && args+=(-H "x-myz-head: $head")
 [ -n "$files" ] && args+=(-H "x-myz-files: $files")
 [ -n "$project_id" ] && args+=(-H "x-myz-project-id: $project_id")
+# Where the session runs, so Myzelium can say where to answer it: a session
+# spawned by `claude remote-control` carries CLAUDE_CODE_ENVIRONMENT_KIND=bridge
+# and can be answered in the Claude app; anything else is a terminal.
+if [ "${CLAUDE_CODE_ENVIRONMENT_KIND:-}" = "bridge" ]; then
+  args+=(-H "x-myz-surface: remote-control")
+else
+  args+=(-H "x-myz-surface: terminal")
+fi
 printf '%s' "$input" | curl "${args[@]}" --data-binary @- >/dev/null 2>&1
 exit 0
