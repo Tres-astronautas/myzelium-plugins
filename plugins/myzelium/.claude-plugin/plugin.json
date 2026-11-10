@@ -1,7 +1,7 @@
 {
   "name": "myzelium",
   "displayName": "Myzelium",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Makes each Claude Code session in a Myzelium project aware of the other work on it: other sessions, VirtualCoder runs and overlapping files, as a brief at session start and the get_sibling_sessions MCP tool.",
   "author": {
     "name": "Tres Astronautas"

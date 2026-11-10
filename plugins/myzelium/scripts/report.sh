@@ -59,7 +59,9 @@ if git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     done
     files=$( { [ -n "$base" ] && git -C "$cwd" diff --name-only "$base" 2>/dev/null
                git -C "$cwd" status --porcelain -uall 2>/dev/null | cut -c4- | sed 's/.* -> //'; } \
-             | sort -u | head -n 80 | paste -sd '|' -)
+             | sort -u \
+             | awk -F/ '{ b = $NF } b ~ /^\.env(\..*)?$/ && b !~ /^\.env\.(example|sample|template)$/ { next } { print }' \
+             | head -n 80 | paste -sd '|' -)
     [ -z "$files" ] && files="-"
   fi
 fi
