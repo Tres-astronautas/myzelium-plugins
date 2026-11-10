@@ -1,7 +1,7 @@
 {
-  "description": "Report session state to Myzelium. Every hook runs in the background and never blocks or changes the session.",
+  "description": "Report session state to Myzelium. SessionStart waits up to 6 s for a short brief of the other work on the project and adds it to the session; every other hook runs in the background. None can block or fail the session.",
   "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "timeout": 6 }] }],
     "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
     "Notification": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
     "PostToolUse": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],

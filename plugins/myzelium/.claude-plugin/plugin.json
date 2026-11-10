@@ -1,8 +1,8 @@
 {
   "name": "myzelium",
   "displayName": "Myzelium",
-  "version": "0.5.0",
-  "description": "Shows your Claude Code sessions in Myzelium: what each one is working on, and which ones are waiting for you. Answer them from Myzelium's inbox when you start Claude Code with the Myzelium channel on; otherwise it only reports.",
+  "version": "0.6.0",
+  "description": "Makes each Claude Code session in a Myzelium project aware of the other work on it: other sessions, VirtualCoder runs and overlapping files, as a brief at session start and the get_sibling_sessions MCP tool.",
   "author": {
     "name": "Tres Astronautas"
   },

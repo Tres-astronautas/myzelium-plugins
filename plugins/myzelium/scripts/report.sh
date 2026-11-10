@@ -3,7 +3,10 @@
 # plus what the hook cannot know itself: the repo's remote, branch, head and
 # the files the branch touches. Needs only bash, git and curl.
 #
-# Never fails the session: every error path exits 0, and the hook is async.
+# Never fails the session: every error path exits 0. Every hook is async
+# except SessionStart, which prints Myzelium's brief of the OTHER work on the
+# project (other sessions, VirtualCoder runs, file overlaps) as the hook's
+# `additionalContext`, or nothing at all.
 # Kill switch: MYZELIUM_SESSIONS_DISABLE=1.
 
 [ -n "${MYZELIUM_SESSIONS_DISABLE:-}" ] && exit 0
@@ -95,9 +98,11 @@ done
 # Strip credentials from an https remote before it leaves the machine.
 remote=$(printf '%s' "$remote" | sed -E 's#://[^/@]+@#://#')
 
-timeout=8
+timeout=8 endpoint="$url/local-sessions/events"
 [ "$event" = "SessionEnd" ] && timeout=2
-args=(-sS -o /dev/null -m "$timeout" -X POST "$url/local-sessions/events"
+# SessionStart is synchronous (hooks.json timeout 6 s), so keep the call short.
+[ "$event" = "SessionStart" ] && { timeout=4; endpoint="$endpoint?brief=hook"; }
+args=(-sS -m "$timeout" -X POST "$endpoint"
   -H "Authorization: Bearer $key" -H "Content-Type: application/json"
   -H "x-myz-host: $(hostname -s 2>/dev/null || hostname)")
 [ -n "$remote" ] && args+=(-H "x-myz-git-remote: $remote")
@@ -113,5 +118,19 @@ if [ "${CLAUDE_CODE_ENVIRONMENT_KIND:-}" = "bridge" ]; then
 else
   args+=(-H "x-myz-surface: terminal")
 fi
-printf '%s' "$input" | curl "${args[@]}" --data-binary @- >/dev/null 2>&1
+if [ "$event" = "SessionStart" ]; then
+  # Print the brief only when it is exactly what was asked for: a 200 carrying
+  # hook output. An older API answers the same POST with a status object, and
+  # anything else (error page, proxy) must never reach the session's context.
+  body=$(printf '%s' "$input" | curl "${args[@]}" -w '\n%{http_code}' --data-binary @- 2>/dev/null)
+  code=${body##*$'\n'}
+  body=${body%$'\n'*}
+  if [ "$code" = "200" ]; then
+    case "$body" in
+      '{"hookSpecificOutput":'*) printf '%s\n' "$body" ;;
+    esac
+  fi
+  exit 0
+fi
+printf '%s' "$input" | curl "${args[@]}" -o /dev/null --data-binary @- >/dev/null 2>&1
 exit 0

@@ -1,15 +1,18 @@
 # Myzelium plugin for Claude Code
 
-A private plugin marketplace. Its one plugin, `myzelium`, shows the Claude Code
-sessions you run on your own machine (on your own subscription) in Myzelium:
-what each one is working on, which branch and files it touches, and which ones
-are waiting for you. It shows up on the project's Build workspace, next to the
-active-work board.
+A private plugin marketplace. Its one plugin, `myzelium`, makes every Claude
+Code session you open in a Myzelium project **aware of the other work on that
+project**: other people's sessions and your own on other machines, VirtualCoder
+runs, and files two sessions are both changing.
 
-**Read-only unless you turn answers on.** By default the plugin only reports.
-Start a session with the Myzelium channel on and you can also **answer it from
-Myzelium** — the inbox on your phone or the web — and the answer arrives in the
-session as if you had typed it there (see [Answering from Myzelium](#answering-from-myzelium)).
+When a session starts, it gets a short brief from Myzelium, which Claude Code
+adds to the session's context. Claude can then ask for the detail with the
+Myzelium MCP tool `get_sibling_sessions`. The audience is Claude, not a
+dashboard: Myzelium coordinates sessions, it never steers them. (Seeing and
+answering your sessions from your phone is what Claude's Remote Control is for.)
+
+**Privacy.** Work on a Myzelium project is shared with that project's members.
+A repo that is not linked to a project your key can read is never stored.
 
 ## Install
 
@@ -50,12 +53,16 @@ A turn that ends on a question is recorded as waiting on that question, so it
 shows up in your home inbox as a decision, not just "finished".
 
 Server-side, the prompt is cut to 280 characters and the reply to 600, and
-pasted blocks are dropped. Prompt, reply and title are **only stored when the
-repo belongs to a Myzelium project your key can read**. For any other repo only
-the session's state is kept, for your own "needs you" list.
+pasted blocks are dropped. **Nothing is stored unless the repo belongs to a
+Myzelium project your key can read** (API 2026-11-10 and later). Everything
+stored is visible to that project's members.
 
-All hooks run in the background, never block the session, and exit 0 on any
-error. Kill switch: `MYZELIUM_SESSIONS_DISABLE=1`.
+`SessionStart` is the one hook that waits: up to 6 seconds (the request itself
+gives up after 4) for the brief, which it prints as the hook's
+`additionalContext`. It prints nothing when the session is alone in its
+project, when the repo is not linked, or on any error, so an older API or an
+outage simply means no brief. Every other hook runs in the background. All of
+them exit 0 on any error. Kill switch: `MYZELIUM_SESSIONS_DISABLE=1`.
 
 ## Answering from Myzelium
 
