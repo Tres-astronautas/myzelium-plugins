@@ -31,7 +31,13 @@ Myzelium → Settings → MCP keys). It is stored in your OS credential store, n
 in `settings.json`. To try it without installing:
 `MYZELIUM_API_KEY=chmcp_… claude --plugin-dir plugins/myzelium`.
 
-Needs `bash`, `git` and `curl` to report; answering also needs `node` 18+.
+Needs `bash`, `git` and `curl`.
+
+**Upgrading from 0.5.0 or older:** answering sessions from Myzelium's inbox
+(the `answers` channel) was retired on 2026-11-10. Drop
+`--dangerously-load-development-channels plugin:myzelium@myzelium` from how you
+start Claude Code. On an older plugin the channel server stops by itself once
+the API answers it 403.
 
 ## What is sent
 
@@ -47,10 +53,7 @@ permission prompt) to `POST /local-sessions/events` (API code: `apps/context-hub
   that is not itself a git repo (only if your key can read that project)
 - at the end of a turn: the files the branch changes plus uncommitted ones (up to 80 paths)
 - whether the session runs under Remote Control (spawned by `claude remote-control`)
-  or in a terminal, so its card can say where to answer it
-
-A turn that ends on a question is recorded as waiting on that question, so it
-shows up in your home inbox as a decision, not just "finished".
+  or in a terminal
 
 Server-side, the prompt is cut to 280 characters and the reply to 600, and
 pasted blocks are dropped. **Nothing is stored unless the repo belongs to a
@@ -64,47 +67,16 @@ project, when the repo is not linked, or on any error, so an older API or an
 outage simply means no brief. Every other hook runs in the background. All of
 them exit 0 on any error. Kill switch: `MYZELIUM_SESSIONS_DISABLE=1`.
 
-## Answering from Myzelium
-
-Start Claude Code with the channel on:
-
-```
-claude --dangerously-load-development-channels plugin:myzelium@myzelium
-```
-
-(`--channels plugin:myzelium@myzelium` once your org adds it to
-`allowedChannelPlugins`; Team/Enterprise orgs must also have `channelsEnabled`
-on — Organization settings → Claude Code → Channels.)
-
-Then a session that asks you something, or finishes its turn, shows an answer
-box in Myzelium's inbox. What you type is delivered by `scripts/channel.mjs`, a
-small MCP server Claude Code runs inside the session:
-
-- **Only you** can answer your session — the answer is taken from your signed-in
-  Myzelium account, and fetched with your MCP key.
-- **Only between turns.** An answer waits while the session is working.
-- **The terminal wins.** If you type in the terminal first, the queued answer
-  is cancelled, never delivered late.
-- **Permission prompts: one call at a time.** When the session stops on a
-  permission prompt, the card shows the tool and its arguments with **Allow
-  once** and **Deny**. The verdict applies to that call only; the terminal
-  dialog stays open, and whichever answer comes first wins. The arguments are
-  stored only while the prompt is open, and wiped when it closes.
-- Without the flag the channel server does nothing — it does not even poll.
-
-Sessions spawned by `claude remote-control` (the device server) cannot be
-started with channels, so they stay read-only; answer them in the Claude app.
-
 ## States
 
 | State | Meaning |
 |---|---|
 | Working | a turn is running |
-| Blocked on you | a permission prompt, a question, or a failed turn |
-| Your move | the turn finished; it waits for your next message |
-| Ended | the session exited (still shown for 2 h) |
+| Waiting on its user | a permission prompt, a question, or a failed turn |
+| Idle | the turn finished; it waits for its user's next message |
+| Ended | the session exited (its result is handed to other sessions for 2 h) |
 
-A session that has not reported anything for 24 h is hidden.
+A session that has not reported anything for 24 h is left out of briefs.
 
 ## Releasing a change
 

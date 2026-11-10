@@ -1,7 +1,7 @@
 {
   "name": "myzelium",
   "displayName": "Myzelium",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Makes each Claude Code session in a Myzelium project aware of the other work on it: other sessions, VirtualCoder runs and overlapping files, as a brief at session start and the get_sibling_sessions MCP tool.",
   "author": {
     "name": "Tres Astronautas"
@@ -20,23 +20,5 @@
       "description": "Leave as is unless you run your own Myzelium",
       "default": "https://api.myzelium.ai"
     }
-  },
-  "mcpServers": {
-    "answers": {
-      "command": "node",
-      "args": [
-        "${CLAUDE_PLUGIN_ROOT}/scripts/channel.mjs"
-      ],
-      "env": {
-        "MYZELIUM_API_KEY": "${user_config.api_key}",
-        "MYZELIUM_API_URL": "${user_config.api_url}"
-      }
-    }
-  },
-  "channels": [
-    {
-      "server": "answers",
-      "displayName": "Myzelium answers"
-    }
-  ]
+  }
 }

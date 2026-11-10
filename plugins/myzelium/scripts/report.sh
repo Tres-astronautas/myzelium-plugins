@@ -27,24 +27,6 @@ event=$(field hook_event_name)
 sid=$(field session_id)
 [ -z "$event" ] || [ -z "$sid" ] && exit 0
 
-# Tell this session's channel server (scripts/channel.mjs) which session it
-# serves. The server is a child of the same claude process as this hook, so
-# the file is keyed by that pid; it follows /clear and --resume, which change
-# the session id inside one process. Written for the hook's parent and
-# grandparent, because a shell may or may not sit between claude and us.
-pid_dir="${CLAUDE_PLUGIN_DATA:-${TMPDIR:-/tmp}/myzelium}/by-pid"
-if mkdir -p "$pid_dir" 2>/dev/null; then
-  [ "$event" = "SessionStart" ] && for f in "$pid_dir"/*; do
-    [ -e "$f" ] && { kill -0 "${f##*/}" 2>/dev/null || rm -f "$f"; }
-  done
-  p=$PPID
-  for _ in 1 2; do
-    case "$p" in ''|*[!0-9]*|0|1) break ;; esac
-    printf '%s' "$sid" > "$pid_dir/$p"
-    p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
-  done
-fi
-
 # A permission prompt blocks the turn; the next PostToolUse means it was
 # answered. Only that one PostToolUse is sent — the rest would be noise.
 state_dir="${CLAUDE_PLUGIN_DATA:-${TMPDIR:-/tmp}/myzelium}/waiting"
