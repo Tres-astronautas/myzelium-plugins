@@ -1,8 +1,9 @@
 {
-  "description": "Report session state to Myzelium. SessionStart waits up to 6 s for a short brief of the other work on the project and adds it to the session; every other hook runs in the background. None can block or fail the session.",
+  "description": "Report session state to Myzelium. SessionStart waits up to 6 s for a short brief of the other work on the project; UserPromptSubmit waits up to 3 s for a NEW spec overlap since the last turn; PreToolUse forwards only Myzelium MCP calls, so Myzelium knows which specs the session reads and changes. Every other hook runs in the background. None can block or fail the session.",
   "hooks": {
     "SessionStart": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "timeout": 6 }] }],
-    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "timeout": 4 }] }],
+    "PreToolUse": [{ "matcher": "mcp__.*([Mm]yzelium|[Cc]ontext.?[Hh]ub).*", "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
     "Notification": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
     "PostToolUse": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],
     "Stop": [{ "hooks": [{ "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/report.sh", "async": true, "timeout": 20 }] }],

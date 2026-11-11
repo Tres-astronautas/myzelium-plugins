@@ -3,10 +3,14 @@
 # plus what the hook cannot know itself: the repo's remote, branch, head and
 # the files the branch touches. Needs only bash, git and curl.
 #
-# Never fails the session: every error path exits 0. Every hook is async
-# except SessionStart, which prints Myzelium's brief of the OTHER work on the
-# project (other sessions, VirtualCoder runs, file overlaps) as the hook's
-# `additionalContext`, or nothing at all.
+# Never fails the session: every error path exits 0. Two hooks are
+# synchronous and may print Myzelium's answer as the hook's `additionalContext`:
+#   SessionStart     — a brief of the OTHER work on the project (other
+#                      sessions, VirtualCoder runs, spec and file overlaps);
+#   UserPromptSubmit — only a NEW spec overlap since the last turn.
+# Either prints nothing at all when there is nothing to say.
+# PreToolUse arrives only for Myzelium MCP tools (hooks.json matcher): Myzelium
+# keeps which specs the call names, never the input.
 # Kill switch: MYZELIUM_SESSIONS_DISABLE=1.
 
 [ -n "${MYZELIUM_SESSIONS_DISABLE:-}" ] && exit 0
@@ -42,6 +46,14 @@ case "$event" in
   UserPromptSubmit|Stop|StopFailure|SessionEnd)
     rm -f "$marker" 2>/dev/null ;;
 esac
+
+# A Myzelium MCP call: no git work, nothing to print.
+if [ "$event" = "PreToolUse" ]; then
+  printf '%s' "$input" | curl -sS -m 8 -X POST "$url/local-sessions/events" \
+    -H "Authorization: Bearer $key" -H "Content-Type: application/json" \
+    -o /dev/null --data-binary @- >/dev/null 2>&1
+  exit 0
+fi
 
 cwd=$(field cwd)
 [ -n "$cwd" ] && [ -d "$cwd" ] || cwd="$PWD"
@@ -86,6 +98,8 @@ timeout=8 endpoint="$url/local-sessions/events"
 [ "$event" = "SessionEnd" ] && timeout=2
 # SessionStart is synchronous (hooks.json timeout 6 s), so keep the call short.
 [ "$event" = "SessionStart" ] && { timeout=4; endpoint="$endpoint?brief=hook"; }
+# UserPromptSubmit is synchronous too (timeout 4 s): the user is waiting.
+[ "$event" = "UserPromptSubmit" ] && { timeout=3; endpoint="$endpoint?brief=prompt"; }
 args=(-sS -m "$timeout" -X POST "$endpoint"
   -H "Authorization: Bearer $key" -H "Content-Type: application/json"
   -H "x-myz-host: $(hostname -s 2>/dev/null || hostname)")
@@ -102,8 +116,8 @@ if [ "${CLAUDE_CODE_ENVIRONMENT_KIND:-}" = "bridge" ]; then
 else
   args+=(-H "x-myz-surface: terminal")
 fi
-if [ "$event" = "SessionStart" ]; then
-  # Print the brief only when it is exactly what was asked for: a 200 carrying
+if [ "$event" = "SessionStart" ] || [ "$event" = "UserPromptSubmit" ]; then
+  # Print the answer only when it is exactly what was asked for: a 200 carrying
   # hook output. An older API answers the same POST with a status object, and
   # anything else (error page, proxy) must never reach the session's context.
   body=$(printf '%s' "$input" | curl "${args[@]}" -w '\n%{http_code}' --data-binary @- 2>/dev/null)
