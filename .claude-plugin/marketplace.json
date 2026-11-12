@@ -1,7 +1,7 @@
 {
   "name": "myzelium",
   "description": "Myzelium plugins for Claude Code",
-  "owner": { "name": "Tres Astronautas", "email": "soto@tresastronautas.com" },
+  "owner": { "name": "Tres Astronautas", "email": "support@myzelium.ai" },
   "plugins": [
     {
       "name": "myzelium",
